@@ -1,0 +1,181 @@
+{
+	"info": {
+		"_postman_id": "73a6b7bb-b184-4a37-ae39-08d82ac13cbc",
+		"name": "FileStorageAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create file",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/Andrei/Documents/Pseudopartitions/GitHub/FileStorage/FileStorage/Test_file.txt"
+						},
+						{
+							"key": "filename",
+							"value": "Test_file",
+							"type": "default"
+						}
+					],
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/file/create",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"file",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Read file",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/file/read?filename=Test_file",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"file",
+						"read"
+					],
+					"query": [
+						{
+							"key": "filename",
+							"value": "Test_file"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update file",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/Andrei/Documents/Pseudopartitions/GitHub/FileStorage/FileStorage/Test_file_modified.txt"
+						},
+						{
+							"key": "filename",
+							"value": "Test_file",
+							"type": "default"
+						}
+					],
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/file/update",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"file",
+						"update"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete file",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/file/delete?filename=Test_file",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"file",
+						"delete"
+					],
+					"query": [
+						{
+							"key": "filename",
+							"value": "Test_file"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all filenames matching regexp",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/storage/match-filename?regexp=abc",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"storage",
+						"match-filename"
+					],
+					"query": [
+						{
+							"key": "regexp",
+							"value": "abc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get number of files in storage",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/storage/number-of-files",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"storage",
+						"number-of-files"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
