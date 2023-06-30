@@ -1,10 +1,13 @@
 package com.andreitraistaru.filestorage.service;
 
 import com.andreitraistaru.filestorage.exceptions.AlreadyExistingStorageItemException;
+import com.andreitraistaru.filestorage.exceptions.MissingStorageItemException;
 import com.andreitraistaru.filestorage.exceptions.StorageCorruptionFoundException;
+import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,6 +15,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 @Service
 @Log4j2
@@ -52,16 +56,44 @@ public class StorageService {
         return false;
     }
 
-    public void createStorageItem(String storageItemName, byte[] storageItemBytes) throws StorageCorruptionFoundException, AlreadyExistingStorageItemException, IOException {
+    public void createStorageItem(String storageItemName, MultipartFile storageItemMultipartFile) throws
+            StorageServiceException {
         File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
-        if (checkIfStorageItemExists(storageItemFileForPersistence)) {
-            throw new AlreadyExistingStorageItemException();
+        try {
+            if (checkIfStorageItemExists(storageItemFileForPersistence)) {
+                throw new AlreadyExistingStorageItemException();
+            }
+        } catch (StorageCorruptionFoundException e) {
+            log.error(Arrays.toString(e.getStackTrace()));
+
+            throw new StorageServiceException();
         }
 
         storageItemFileForPersistence.getParentFile().mkdirs();
 
         try (OutputStream outputStream = new FileOutputStream(storageItemFileForPersistence)) {
-            outputStream.write(storageItemBytes);
+            outputStream.write(storageItemMultipartFile.getBytes());
+        } catch (IOException e) {
+            log.error(Arrays.toString(e.getStackTrace()));
+        }
+    }
+
+    public void deleteStorageItem(String storageItemName) throws
+            StorageCorruptionFoundException, MissingStorageItemException {
+        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        try {
+            if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
+                throw new MissingStorageItemException();
+            }
+        } catch (StorageCorruptionFoundException ignored) {
+            // We were lucky this time that the user also no longer need this file.
+            // Handling this as a successful request masking an internal issue that
+            // has no user impact in this case.
+            return;
+        }
+
+        if (!storageItemFileForPersistence.delete()) {
+            throw new StorageCorruptionFoundException();
         }
     }
 
