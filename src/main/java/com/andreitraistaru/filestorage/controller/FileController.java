@@ -45,9 +45,9 @@ public class FileController {
                                              @RequestParam("file") MultipartFile updatedFile) {
         try {
             storageService.updateStorageItem(filename, updatedFile);
-        } catch(AlreadyExistingStorageItemException ignored) {
-            return new ResponseEntity<>("File " + filename + " already existing. Storage system " +
-                    "has not been modified. Try again using /update endpoint.", HttpStatus.CONFLICT);
+        } catch(MissingStorageItemException ignored) {
+            return new ResponseEntity<>("File " + filename + " not existing. Storage system " +
+                    "has not been modified. Try again using /create endpoint.", HttpStatus.NOT_FOUND);
         } catch (StorageServiceException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

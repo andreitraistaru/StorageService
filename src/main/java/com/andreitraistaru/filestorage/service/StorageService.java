@@ -84,12 +84,11 @@ public class StorageService {
                 throw new MissingStorageItemException();
             }
         } catch (StorageCorruptionFoundException e) {
-            // We were lucky this time that the user also updates this file.
-            // Handling this by creating the file as a successful request masking an internal issue that
-            // has no user impact in this case.
+            // Handling this as a missing storage item since most probably
+            // the user hasn't created the file before and a directory with
+            // the same name could have been created externally.
+            throw new MissingStorageItemException();
         }
-
-        storageItemFileForPersistence.getParentFile().mkdirs();
 
         try (OutputStream outputStream = new FileOutputStream(storageItemFileForPersistence)) {
             outputStream.write(storageItemMultipartFile.getBytes());
@@ -106,10 +105,10 @@ public class StorageService {
                 throw new MissingStorageItemException();
             }
         } catch (StorageCorruptionFoundException ignored) {
-            // We were lucky this time that the user also no longer need this file.
-            // Handling this as a successful request masking an internal issue that
-            // has no user impact in this case.
-            return;
+            // Handling this as a missing storage item since most probably
+            // the user hasn't created the file before and a directory with
+            // the same name could have been created externally.
+            throw new MissingStorageItemException();
         }
 
         if (!storageItemFileForPersistence.delete()) {
