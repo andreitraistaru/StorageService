@@ -28,7 +28,7 @@ public class StorageService {
     }
 
     private File getFileForStorageItem(String storageItemName) {
-        return new File(rootPath.concat(storageItemName.replace("", "/").concat(storageItemName)));
+        return new File(rootPath.concat(storageItemName.replace("", "/").concat(storageItemName).concat(".storage")));
     }
 
     public boolean checkIfStorageItemExists(File storageItemFile) throws StorageCorruptionFoundException {
@@ -64,9 +64,29 @@ public class StorageService {
                 throw new AlreadyExistingStorageItemException();
             }
         } catch (StorageCorruptionFoundException e) {
-            log.error(Arrays.toString(e.getStackTrace()));
-
             throw new StorageServiceException();
+        }
+
+        storageItemFileForPersistence.getParentFile().mkdirs();
+
+        try (OutputStream outputStream = new FileOutputStream(storageItemFileForPersistence)) {
+            outputStream.write(storageItemMultipartFile.getBytes());
+        } catch (IOException e) {
+            log.error(Arrays.toString(e.getStackTrace()));
+        }
+    }
+
+    public void updateStorageItem(String storageItemName, MultipartFile storageItemMultipartFile) throws
+            StorageServiceException {
+        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        try {
+            if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
+                throw new MissingStorageItemException();
+            }
+        } catch (StorageCorruptionFoundException e) {
+            // We were lucky this time that the user also updates this file.
+            // Handling this by creating the file as a successful request masking an internal issue that
+            // has no user impact in this case.
         }
 
         storageItemFileForPersistence.getParentFile().mkdirs();

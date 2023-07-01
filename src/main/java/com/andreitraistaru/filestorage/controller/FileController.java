@@ -42,7 +42,16 @@ public class FileController {
 
     @PutMapping("/update")
     public ResponseEntity<String> updateFile(@RequestParam("filename") String filename,
-                                             @RequestParam("file") MultipartFile file) {
+                                             @RequestParam("file") MultipartFile updatedFile) {
+        try {
+            storageService.updateStorageItem(filename, updatedFile);
+        } catch(AlreadyExistingStorageItemException ignored) {
+            return new ResponseEntity<>("File " + filename + " already existing. Storage system " +
+                    "has not been modified. Try again using /update endpoint.", HttpStatus.CONFLICT);
+        } catch (StorageServiceException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
         return new ResponseEntity<>("File " + filename + " updated successfully.", HttpStatus.OK);
     }
 
