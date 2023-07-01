@@ -5,7 +5,10 @@ import com.andreitraistaru.filestorage.exceptions.MissingStorageItemException;
 import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
 import com.andreitraistaru.filestorage.service.StorageService;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,8 +39,21 @@ public class FileController {
     }
 
     @GetMapping("/read")
-    public ResponseEntity<MultipartFile> readFile(@RequestParam("filename") String filename) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+    public ResponseEntity<Resource> readFile(@RequestParam("filename") String filename) {
+        Resource storageItemResource;
+
+        try {
+            storageItemResource = storageService.readStorageItem(filename);
+        } catch(MissingStorageItemException ignored) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (StorageServiceException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(storageItemResource);
     }
 
     @PutMapping("/update")

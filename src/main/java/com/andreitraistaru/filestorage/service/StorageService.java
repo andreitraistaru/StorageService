@@ -6,6 +6,8 @@ import com.andreitraistaru.filestorage.exceptions.StorageCorruptionFoundExceptio
 import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,6 +15,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -56,6 +59,29 @@ public class StorageService {
         return false;
     }
 
+    public Resource readStorageItem(String storageItemName) throws
+            StorageServiceException {
+        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        try {
+            if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
+                throw new MissingStorageItemException();
+            }
+        } catch (StorageCorruptionFoundException e) {
+            // Handling this as a missing storage item since most probably
+            // the user hasn't created the file before and a directory with
+            // the same name could have been created externally.
+            throw new MissingStorageItemException();
+        }
+
+        try {
+            return new UrlResource(storageItemFileForPersistence.toPath().toUri());
+        } catch (MalformedURLException e) {
+            log.error(Arrays.toString(e.getStackTrace()));
+
+            throw new StorageServiceException();
+        }
+    }
+
     public void createStorageItem(String storageItemName, MultipartFile storageItemMultipartFile) throws
             StorageServiceException {
         File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
@@ -73,6 +99,8 @@ public class StorageService {
             outputStream.write(storageItemMultipartFile.getBytes());
         } catch (IOException e) {
             log.error(Arrays.toString(e.getStackTrace()));
+
+            throw new StorageServiceException();
         }
     }
 
@@ -94,6 +122,8 @@ public class StorageService {
             outputStream.write(storageItemMultipartFile.getBytes());
         } catch (IOException e) {
             log.error(Arrays.toString(e.getStackTrace()));
+
+            throw new StorageServiceException();
         }
     }
 
