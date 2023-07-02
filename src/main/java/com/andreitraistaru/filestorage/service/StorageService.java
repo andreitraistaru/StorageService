@@ -1,6 +1,7 @@
 package com.andreitraistaru.filestorage.service;
 
 import com.andreitraistaru.filestorage.exceptions.*;
+import com.andreitraistaru.filestorage.utils.FileOperations;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -22,6 +23,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.andreitraistaru.filestorage.utils.FileOperations.countNumberOfItemsInStorage;
+import static com.andreitraistaru.filestorage.utils.Validators.validateRegexp;
+import static com.andreitraistaru.filestorage.utils.Validators.validateStorageItemName;
 
 @Service
 @Log4j2
@@ -51,44 +56,47 @@ public class StorageService {
         Path root = Paths.get(rootPath);
         Files.createDirectories(Files.createDirectories(root));
 
-        this.numberOfStorageItems.set(computeNumberOfItemsInStorage(root));
+        this.numberOfStorageItems.set(countNumberOfItemsInStorage(root));
     }
 
-    private long computeNumberOfItemsInStorage(Path root) throws IOException {
-        try (Stream<Path> filesWalking = Files.walk(root)) {
-            return filesWalking.filter(path -> !Files.isDirectory(path)).count();
-        }
-    }
-
-    private File getFileForStorageItem(String storageItemName) throws InvalidStorageItemNameException {
-        if (storageItemName == null || storageItemName.isBlank() || storageItemName.length() > 64 || !storageItemName.matches("[a-zA-Z0-9_-]+")) {
-            throw new InvalidStorageItemNameException();
-        }
-
+    private File getFileForPersistenceForStorageItemName(String storageItemName) {
+        // Builds up the path in the filesystem where the storage item will be saved
         StringBuilder rootPathForPersistence = new StringBuilder(rootPath);
+        // Builds up the name of each folder from the storage hierarchy
         StringBuilder currentDirectoryName = new StringBuilder();
         int imbricationLevelsLeft = imbricationLevel;
 
         for (int i = 0; i < storageItemName.length(); i++) {
+            // Building up the name of the directory from the current level of
+            // imbrication where the file will finally land on
             currentDirectoryName.append(storageItemName.charAt(i));
 
             if (i % 2 == 1) {
+                // We chose to split the name of the storage item in chunks
+                // of two letters representing the name of the directory from
+                // each level of imbrication
                 rootPathForPersistence.append(currentDirectoryName).append("/");
                 currentDirectoryName = new StringBuilder();
                 imbricationLevelsLeft--;
 
                 if (imbricationLevelsLeft == 0) {
+                    // Maximum imbrication level reached; storing the file in
+                    // the directory that we got so far
                     break;
                 }
             }
         }
 
+        // For better visibility and traceability, each storage item will be
+        // saved with a `STORAGE_ITEM_EXTENSION` extension appended to its name
         rootPathForPersistence.append(storageItemName).append(STORAGE_ITEM_EXTENSION);
 
         return new File(rootPathForPersistence.toString());
     }
 
     private String getStorageItemNameFromFileName(String filename) {
+        // Getting rid of the extension used to save the storage item in the
+        // filesystem
         return filename.substring(0, filename.length() - STORAGE_ITEM_EXTENSION.length());
     }
 
@@ -100,7 +108,7 @@ public class StorageService {
                 log.info("Recovering Storage started: ...");
                 log.info("Deleting directory " + storageItemFile.getAbsolutePath());
 
-                if (!deleteRecursively(storageItemFile)) {
+                if (!FileOperations.deleteRecursively(storageItemFile)) {
                     log.error("Recovering Storage failed! Fix it manually.");
 
                     throw new StorageCorruptionFoundException();
@@ -118,7 +126,9 @@ public class StorageService {
     }
 
     public Resource readStorageItem(String storageItemName) throws StorageServiceException {
-        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        validateStorageItemName(storageItemName);
+
+        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new MissingStorageItemException();
@@ -141,7 +151,9 @@ public class StorageService {
 
     public void createStorageItem(String storageItemName, MultipartFile storageItemMultipartFile) throws
             StorageServiceException {
-        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        validateStorageItemName(storageItemName);
+
+        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
         try {
             if (checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new AlreadyExistingStorageItemException();
@@ -150,22 +162,27 @@ public class StorageService {
             throw new StorageServiceException();
         }
 
+        // Create directory hierarchy where the storage item will be saved
         storageItemFileForPersistence.getParentFile().mkdirs();
 
+        // Saving the storage item
         try (OutputStream outputStream = new FileOutputStream(storageItemFileForPersistence)) {
             outputStream.write(storageItemMultipartFile.getBytes());
-
-            numberOfStorageItems.incrementAndGet();
         } catch (IOException e) {
             log.error(Arrays.toString(e.getStackTrace()));
 
             throw new StorageServiceException();
         }
+
+        // Updating the total number of files in the storage system
+        numberOfStorageItems.incrementAndGet();
     }
 
     public void updateStorageItem(String storageItemName, MultipartFile storageItemMultipartFile) throws
             StorageServiceException {
-        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        validateStorageItemName(storageItemName);
+
+        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new MissingStorageItemException();
@@ -177,6 +194,7 @@ public class StorageService {
             throw new MissingStorageItemException();
         }
 
+        // Rewriting the storage item in the filesystem
         try (OutputStream outputStream = new FileOutputStream(storageItemFileForPersistence)) {
             outputStream.write(storageItemMultipartFile.getBytes());
         } catch (IOException e) {
@@ -188,7 +206,9 @@ public class StorageService {
 
     public void deleteStorageItem(String storageItemName) throws
             StorageCorruptionFoundException, MissingStorageItemException, InvalidStorageItemNameException {
-        File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
+        validateStorageItemName(storageItemName);
+
+        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new MissingStorageItemException();
@@ -200,37 +220,12 @@ public class StorageService {
             throw new MissingStorageItemException();
         }
 
+        // Delete the storage item from the filesystem
         if (!storageItemFileForPersistence.delete()) {
             throw new StorageCorruptionFoundException();
-        } else {
-            numberOfStorageItems.decrementAndGet();
         }
-    }
-
-    private boolean deleteRecursively(File file) {
-        if (!file.exists()) {
-            return true;
-        }
-
-        if (file.isFile()) {
-            if (!file.delete()) {
-                log.warn(file.getAbsolutePath() + " could not be deleted. Skipping it...");
-
-                return false;
-            }
-
-            return true;
-        }
-
-        File[] childFiles = file.listFiles();
-
-        if (childFiles != null) {
-            for (File childFile : childFiles) {
-                deleteRecursively(childFile);
-            }
-        }
-
-        return file.delete();
+        // Updating the total number of files in the storage system
+        numberOfStorageItems.decrementAndGet();
     }
 
     public long getTotalNumberOfItemsInStorage() {
@@ -238,16 +233,17 @@ public class StorageService {
     }
 
     public List<String> getStorageItemsMatchingRegexp(String regexp) throws StorageServiceException {
-        if (regexp == null || regexp.isBlank()) {
-            throw new InvalidRegexpException();
-        }
+        validateRegexp(regexp);
 
         List<String> itemsMatchingRegexp;
 
         try (Stream<Path> filesWalking = Files.walk(Paths.get(rootPath))) {
             itemsMatchingRegexp = filesWalking
+                    // Skipping directories
                     .filter(path -> !Files.isDirectory(path))
+                    // Mapping each file's `Path` to the storage item name
                     .map(path -> getStorageItemNameFromFileName(path.getFileName().toString()))
+                    // Filtering out non-matching strings with the regexp
                     .filter(filename -> filename.matches(regexp))
                     .collect(Collectors.toList());
         } catch (PatternSyntaxException ignored) {
