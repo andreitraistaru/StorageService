@@ -11,6 +11,10 @@ import java.util.stream.Stream;
 @Log4j2
 public class FileOperations {
     public static boolean deleteRecursively(File file) {
+        if (file == null) {
+            return true;
+        }
+
         if (!file.exists()) {
             return true;
         }
@@ -37,6 +41,10 @@ public class FileOperations {
     }
 
     public static long countNumberOfItemsInStorage(Path root) throws IOException {
+        if (root == null || !Files.exists(root)) {
+            return 0;
+        }
+
         try (Stream<Path> filesWalking = Files.walk(root)) {
             return filesWalking.filter(path -> !Files.isDirectory(path)).count();
         }
