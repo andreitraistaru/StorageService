@@ -1,9 +1,6 @@
 package com.andreitraistaru.filestorage.service;
 
-import com.andreitraistaru.filestorage.exceptions.AlreadyExistingStorageItemException;
-import com.andreitraistaru.filestorage.exceptions.MissingStorageItemException;
-import com.andreitraistaru.filestorage.exceptions.StorageCorruptionFoundException;
-import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
+import com.andreitraistaru.filestorage.exceptions.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -20,12 +17,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
 @Log4j2
 public class StorageService {
+    private final String STORAGE_ITEM_EXTENSION = ".storage";
     @Value("${storage.service.root.path}")
     private String rootPath;
 
@@ -46,7 +47,11 @@ public class StorageService {
     }
 
     private File getFileForStorageItem(String storageItemName) {
-        return new File(rootPath.concat(storageItemName.replace("", "/").concat(storageItemName).concat(".storage")));
+        return new File(rootPath.concat(storageItemName.replace("", "/").concat(storageItemName).concat(STORAGE_ITEM_EXTENSION)));
+    }
+
+    private String getStorageItemNameFromFileName(String filename) {
+        return filename.substring(0, filename.length() - STORAGE_ITEM_EXTENSION.length());
     }
 
     public boolean checkIfStorageItemExists(File storageItemFile) throws StorageCorruptionFoundException {
@@ -193,5 +198,29 @@ public class StorageService {
 
     public long getTotalNumberOfItemsInStorage() {
         return numberOfStorageItems.get();
+    }
+
+    public List<String> getStorageItemsMatchingRegexp(String regexp) throws StorageServiceException {
+        if (regexp == null || regexp.isBlank()) {
+            throw new InvalidRegexpException();
+        }
+
+        List<String> itemsMatchingRegexp;
+
+        try (Stream<Path> filesWalking = Files.walk(Paths.get(rootPath))) {
+            itemsMatchingRegexp = filesWalking
+                    .filter(path -> !Files.isDirectory(path))
+                    .map(path -> getStorageItemNameFromFileName(path.getFileName().toString()))
+                    .filter(filename -> filename.matches(regexp))
+                    .collect(Collectors.toList());
+        } catch (PatternSyntaxException ignored) {
+            throw new InvalidRegexpException();
+        } catch (IOException e) {
+            log.error(Arrays.toString(e.getStackTrace()));
+
+            throw new StorageServiceException();
+        }
+
+        return itemsMatchingRegexp;
     }
 }
