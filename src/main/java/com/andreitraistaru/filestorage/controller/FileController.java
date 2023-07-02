@@ -5,6 +5,7 @@ import com.andreitraistaru.filestorage.exceptions.InvalidStorageItemNameExceptio
 import com.andreitraistaru.filestorage.exceptions.MissingStorageItemException;
 import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
 import com.andreitraistaru.filestorage.service.StorageService;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -17,12 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/file")
 @Log4j2
+@AllArgsConstructor
 public class FileController {
     private final StorageService storageService;
-
-    public FileController(StorageService storageService) {
-        this.storageService = storageService;
-    }
 
     @PostMapping("/create")
     public ResponseEntity<String> createFile(@RequestParam("filename") String filename,

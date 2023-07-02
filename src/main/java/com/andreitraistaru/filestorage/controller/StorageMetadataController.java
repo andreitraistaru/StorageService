@@ -5,6 +5,7 @@ import com.andreitraistaru.filestorage.dto.NumberOfFilesDTO;
 import com.andreitraistaru.filestorage.exceptions.InvalidRegexpException;
 import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
 import com.andreitraistaru.filestorage.service.StorageService;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,12 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/storage")
+@AllArgsConstructor
 public class StorageMetadataController {
     private final StorageService storageService;
-
-    public StorageMetadataController(StorageService storageService) {
-        this.storageService = storageService;
-    }
 
     @GetMapping("/match-filename")
     public ResponseEntity<FilesMatchingRegexpDTO> matchFilenameWithRegexp(@RequestParam("regexp") String regexp) {
