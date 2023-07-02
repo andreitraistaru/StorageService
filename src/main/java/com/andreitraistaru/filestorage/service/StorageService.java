@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 @Log4j2
 public class StorageService {
     private final String STORAGE_ITEM_EXTENSION = ".storage";
-    private String rootPath;
+    private final String rootPath;
     private final int imbricationLevel;
 
     private final AtomicLong numberOfStorageItems = new AtomicLong();
