@@ -1,4 +1,4 @@
-package com.andreitraistaru.filestorage.exceptions;
+package com.andreitraistaru.filestorage.exception;
 
 public class InvalidStorageItemNameException extends StorageServiceException {
 }

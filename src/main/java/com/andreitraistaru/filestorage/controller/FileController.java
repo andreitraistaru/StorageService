@@ -1,9 +1,9 @@
 package com.andreitraistaru.filestorage.controller;
 
-import com.andreitraistaru.filestorage.exceptions.AlreadyExistingStorageItemException;
-import com.andreitraistaru.filestorage.exceptions.InvalidStorageItemNameException;
-import com.andreitraistaru.filestorage.exceptions.MissingStorageItemException;
-import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
+import com.andreitraistaru.filestorage.exception.AlreadyExistingStorageItemException;
+import com.andreitraistaru.filestorage.exception.InvalidStorageItemNameException;
+import com.andreitraistaru.filestorage.exception.MissingStorageItemException;
+import com.andreitraistaru.filestorage.exception.StorageServiceException;
 import com.andreitraistaru.filestorage.service.StorageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;

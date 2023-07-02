@@ -1,6 +1,6 @@
 package com.andreitraistaru.filestorage.service;
 
-import com.andreitraistaru.filestorage.exceptions.*;
+import com.andreitraistaru.filestorage.exception.*;
 import com.andreitraistaru.filestorage.utils.FileOperations;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;

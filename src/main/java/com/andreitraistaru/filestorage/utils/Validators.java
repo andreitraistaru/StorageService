@@ -1,7 +1,7 @@
 package com.andreitraistaru.filestorage.utils;
 
-import com.andreitraistaru.filestorage.exceptions.InvalidRegexpException;
-import com.andreitraistaru.filestorage.exceptions.InvalidStorageItemNameException;
+import com.andreitraistaru.filestorage.exception.InvalidRegexpException;
+import com.andreitraistaru.filestorage.exception.InvalidStorageItemNameException;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.regex.Pattern;

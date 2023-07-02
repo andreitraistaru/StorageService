@@ -2,8 +2,8 @@ package com.andreitraistaru.filestorage.controller;
 
 import com.andreitraistaru.filestorage.dto.FilesMatchingRegexpDTO;
 import com.andreitraistaru.filestorage.dto.NumberOfFilesDTO;
-import com.andreitraistaru.filestorage.exceptions.InvalidRegexpException;
-import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
+import com.andreitraistaru.filestorage.exception.InvalidRegexpException;
+import com.andreitraistaru.filestorage.exception.StorageServiceException;
 import com.andreitraistaru.filestorage.service.StorageService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;

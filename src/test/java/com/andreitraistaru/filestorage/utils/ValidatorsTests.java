@@ -1,7 +1,7 @@
 package com.andreitraistaru.filestorage.utils;
 
-import com.andreitraistaru.filestorage.exceptions.InvalidRegexpException;
-import com.andreitraistaru.filestorage.exceptions.InvalidStorageItemNameException;
+import com.andreitraistaru.filestorage.exception.InvalidRegexpException;
+import com.andreitraistaru.filestorage.exception.InvalidStorageItemNameException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
