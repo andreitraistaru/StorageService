@@ -27,14 +27,28 @@ import java.util.stream.Stream;
 @Log4j2
 public class StorageService {
     private final String STORAGE_ITEM_EXTENSION = ".storage";
-    @Value("${storage.service.root.path}")
     private String rootPath;
+    private final int imbricationLevel;
 
     private final AtomicLong numberOfStorageItems = new AtomicLong();
 
-    public StorageService(@Value("${storage.service.root.path}") String rootPath) throws IOException {
-        Path root = Paths.get(rootPath);
+    public StorageService(@Value("${storage.service.root.path}") String rootPath,
+                          @Value("${storage.service.imbrication.level}") int imbricationLevel) throws IOException {
+        if (rootPath.endsWith("/") || rootPath.endsWith("\\")) {
+            this.rootPath = rootPath;
+        } else {
+            this.rootPath = rootPath.concat("/");
+        }
 
+        if (imbricationLevel <= 0) {
+            log.error("Imbrication level must be > 0.");
+
+            throw new RuntimeException();
+        } else {
+            this.imbricationLevel = imbricationLevel;
+        }
+
+        Path root = Paths.get(rootPath);
         Files.createDirectories(Files.createDirectories(root));
 
         this.numberOfStorageItems.set(computeNumberOfItemsInStorage(root));
@@ -46,8 +60,32 @@ public class StorageService {
         }
     }
 
-    private File getFileForStorageItem(String storageItemName) {
-        return new File(rootPath.concat(storageItemName.replace("", "/").concat(storageItemName).concat(STORAGE_ITEM_EXTENSION)));
+    private File getFileForStorageItem(String storageItemName) throws InvalidStorageItemNameException {
+        if (storageItemName == null || storageItemName.isBlank() || storageItemName.length() > 64 || !storageItemName.matches("[a-zA-Z0-9_-]+")) {
+            throw new InvalidStorageItemNameException();
+        }
+
+        StringBuilder rootPathForPersistence = new StringBuilder(rootPath);
+        StringBuilder currentDirectoryName = new StringBuilder();
+        int imbricationLevelsLeft = imbricationLevel;
+
+        for (int i = 0; i < storageItemName.length(); i++) {
+            currentDirectoryName.append(storageItemName.charAt(i));
+
+            if (i % 2 == 1) {
+                rootPathForPersistence.append(currentDirectoryName).append("/");
+                currentDirectoryName = new StringBuilder();
+                imbricationLevelsLeft--;
+
+                if (imbricationLevelsLeft == 0) {
+                    break;
+                }
+            }
+        }
+
+        rootPathForPersistence.append(storageItemName).append(STORAGE_ITEM_EXTENSION);
+
+        return new File(rootPathForPersistence.toString());
     }
 
     private String getStorageItemNameFromFileName(String filename) {
@@ -79,8 +117,7 @@ public class StorageService {
         return false;
     }
 
-    public Resource readStorageItem(String storageItemName) throws
-            StorageServiceException {
+    public Resource readStorageItem(String storageItemName) throws StorageServiceException {
         File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
@@ -150,7 +187,7 @@ public class StorageService {
     }
 
     public void deleteStorageItem(String storageItemName) throws
-            StorageCorruptionFoundException, MissingStorageItemException {
+            StorageCorruptionFoundException, MissingStorageItemException, InvalidStorageItemNameException {
         File storageItemFileForPersistence = getFileForStorageItem(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {

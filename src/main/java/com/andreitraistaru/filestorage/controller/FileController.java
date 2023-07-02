@@ -1,6 +1,7 @@
 package com.andreitraistaru.filestorage.controller;
 
 import com.andreitraistaru.filestorage.exceptions.AlreadyExistingStorageItemException;
+import com.andreitraistaru.filestorage.exceptions.InvalidStorageItemNameException;
 import com.andreitraistaru.filestorage.exceptions.MissingStorageItemException;
 import com.andreitraistaru.filestorage.exceptions.StorageServiceException;
 import com.andreitraistaru.filestorage.service.StorageService;
@@ -31,6 +32,9 @@ public class FileController {
         } catch(AlreadyExistingStorageItemException ignored) {
             return new ResponseEntity<>("File " + filename + " already existing. Storage system " +
                     "has not been modified. Try again using /update endpoint.", HttpStatus.CONFLICT);
+        } catch(InvalidStorageItemNameException ignored) {
+            return new ResponseEntity<>(filename + " is an invalid file name. File name should contain" +
+                    " 1-64 characters from [a-z][A-Z][0-9]_-", HttpStatus.BAD_REQUEST);
         } catch (StorageServiceException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -39,13 +43,16 @@ public class FileController {
     }
 
     @GetMapping("/read")
-    public ResponseEntity<Resource> readFile(@RequestParam("filename") String filename) {
+    public ResponseEntity<?> readFile(@RequestParam("filename") String filename) {
         Resource storageItemResource;
 
         try {
             storageItemResource = storageService.readStorageItem(filename);
         } catch(MissingStorageItemException ignored) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch(InvalidStorageItemNameException ignored) {
+            return new ResponseEntity<>(filename + " is an invalid file name. File name should contain" +
+                    " 1-64 characters from [a-z][A-Z][0-9]_-", HttpStatus.BAD_REQUEST);
         } catch (StorageServiceException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -64,6 +71,9 @@ public class FileController {
         } catch(MissingStorageItemException ignored) {
             return new ResponseEntity<>("File " + filename + " not existing. Storage system " +
                     "has not been modified. Try again using /create endpoint.", HttpStatus.NOT_FOUND);
+        }  catch(InvalidStorageItemNameException ignored) {
+            return new ResponseEntity<>(filename + " is an invalid file name. File name should contain" +
+                    " 1-64 characters from [a-z][A-Z][0-9]_-", HttpStatus.BAD_REQUEST);
         } catch (StorageServiceException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -77,6 +87,9 @@ public class FileController {
             storageService.deleteStorageItem(filename);
         } catch(MissingStorageItemException ignored) {
             return new ResponseEntity<>("File " + filename + " not existing.", HttpStatus.NOT_FOUND);
+        } catch(InvalidStorageItemNameException ignored) {
+            return new ResponseEntity<>(filename + " is an invalid file name. File name should contain" +
+                    " 1-64 characters from [a-z][A-Z][0-9]_-", HttpStatus.BAD_REQUEST);
         } catch (StorageServiceException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
