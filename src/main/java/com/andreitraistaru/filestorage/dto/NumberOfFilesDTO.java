@@ -1,13 +1,13 @@
 package com.andreitraistaru.filestorage.dto;
 
 public class NumberOfFilesDTO {
-    private int numberOfFiles;
+    private long numberOfFiles;
 
-    public int getNumberOfFiles() {
+    public long getNumberOfFiles() {
         return numberOfFiles;
     }
 
-    public void setNumberOfFiles(int numberOfFiles) {
+    public void setNumberOfFiles(long numberOfFiles) {
         this.numberOfFiles = numberOfFiles;
     }
 }

@@ -17,8 +17,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 @Service
 @Log4j2
@@ -26,8 +29,20 @@ public class StorageService {
     @Value("${storage.service.root.path}")
     private String rootPath;
 
+    private final AtomicLong numberOfStorageItems = new AtomicLong();
+
     public StorageService(@Value("${storage.service.root.path}") String rootPath) throws IOException {
-        Files.createDirectories(Files.createDirectories(Paths.get(rootPath)));
+        Path root = Paths.get(rootPath);
+
+        Files.createDirectories(Files.createDirectories(root));
+
+        this.numberOfStorageItems.set(computeNumberOfItemsInStorage(root));
+    }
+
+    private long computeNumberOfItemsInStorage(Path root) throws IOException {
+        try (Stream<Path> filesWalking = Files.walk(root)) {
+            return filesWalking.filter(path -> !Files.isDirectory(path)).count();
+        }
     }
 
     private File getFileForStorageItem(String storageItemName) {
@@ -97,6 +112,8 @@ public class StorageService {
 
         try (OutputStream outputStream = new FileOutputStream(storageItemFileForPersistence)) {
             outputStream.write(storageItemMultipartFile.getBytes());
+
+            numberOfStorageItems.incrementAndGet();
         } catch (IOException e) {
             log.error(Arrays.toString(e.getStackTrace()));
 
@@ -143,6 +160,8 @@ public class StorageService {
 
         if (!storageItemFileForPersistence.delete()) {
             throw new StorageCorruptionFoundException();
+        } else {
+            numberOfStorageItems.decrementAndGet();
         }
     }
 
@@ -170,5 +189,9 @@ public class StorageService {
         }
 
         return file.delete();
+    }
+
+    public long getTotalNumberOfItemsInStorage() {
+        return numberOfStorageItems.get();
     }
 }
