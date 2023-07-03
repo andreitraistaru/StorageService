@@ -100,7 +100,7 @@ public class StorageService {
         return filename.substring(0, filename.length() - STORAGE_ITEM_EXTENSION.length());
     }
 
-    public boolean checkIfStorageItemExists(File storageItemFile) throws StorageCorruptionFoundException {
+    private boolean checkIfStorageItemExists(File storageItemFile) throws StorageCorruptionFoundException {
         if (storageItemFile.exists()) {
             if (storageItemFile.isDirectory()) {
                 log.error("Storage service found a directory when searching for item at " +
