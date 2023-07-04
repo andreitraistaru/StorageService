@@ -72,7 +72,7 @@
 		{
 			"name": "Update file",
 			"request": {
-				"method": "PUT",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "formdata",

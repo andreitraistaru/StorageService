@@ -61,7 +61,7 @@ public class FileController {
                 .body(storageItemResource);
     }
 
-    @PutMapping("/update")
+    @PostMapping("/update")
     public ResponseEntity<String> updateFile(@RequestParam("filename") String filename,
                                              @RequestParam("file") MultipartFile updatedFile) {
         try {
