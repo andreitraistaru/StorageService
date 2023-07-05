@@ -59,7 +59,13 @@ public class StorageService {
         this.numberOfStorageItems.set(countNumberOfItemsInStorage(root));
     }
 
-    private File getFileForPersistenceForStorageItemName(String storageItemName) {
+    private File getFileForPersistenceFromStorageItemName(String storageItemName) {
+        // We can adapt this method and apply a hash function on `storageItemName`
+        // first and then compute the path in the filesystem based on this hash,
+        // using the same approach as below; this can be justified if we know that
+        // there are high changes of getting lots of files with names starting with
+        // same characters.
+
         // Builds up the path in the filesystem where the storage item will be saved
         StringBuilder rootPathForPersistence = new StringBuilder(rootPath);
         // Builds up the name of each folder from the storage hierarchy
@@ -128,7 +134,7 @@ public class StorageService {
     public Resource readStorageItem(String storageItemName) throws StorageServiceException {
         validateStorageItemName(storageItemName);
 
-        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
+        File storageItemFileForPersistence = getFileForPersistenceFromStorageItemName(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new MissingStorageItemException();
@@ -153,7 +159,7 @@ public class StorageService {
             StorageServiceException {
         validateStorageItemName(storageItemName);
 
-        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
+        File storageItemFileForPersistence = getFileForPersistenceFromStorageItemName(storageItemName);
         try {
             if (checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new AlreadyExistingStorageItemException();
@@ -182,7 +188,7 @@ public class StorageService {
             StorageServiceException {
         validateStorageItemName(storageItemName);
 
-        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
+        File storageItemFileForPersistence = getFileForPersistenceFromStorageItemName(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new MissingStorageItemException();
@@ -208,7 +214,7 @@ public class StorageService {
             StorageCorruptionFoundException, MissingStorageItemException, InvalidStorageItemNameException {
         validateStorageItemName(storageItemName);
 
-        File storageItemFileForPersistence = getFileForPersistenceForStorageItemName(storageItemName);
+        File storageItemFileForPersistence = getFileForPersistenceFromStorageItemName(storageItemName);
         try {
             if (!checkIfStorageItemExists(storageItemFileForPersistence)) {
                 throw new MissingStorageItemException();

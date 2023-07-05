@@ -1,6 +1,8 @@
 package com.andreitraistaru.filestorage.service;
 
 import com.andreitraistaru.filestorage.exception.*;
+import com.andreitraistaru.filestorage.utils.FileOperations;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,14 @@ public class StorageServiceTests {
     void init() throws IOException {
         this.root = Files.createTempDirectory(null);
         this.storageService = new StorageService(this.root.toString(), 3);
+    }
+
+    @AfterEach
+    void cleanup() {
+        FileOperations.deleteRecursively(this.root.toFile());
+
+        this.root = null;
+        this.storageService = null;
     }
 
     @Test

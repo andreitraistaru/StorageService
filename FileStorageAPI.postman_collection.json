@@ -16,7 +16,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/C:/Users/Andrei/Documents/Pseudopartitions/GitHub/FileStorage/FileStorage/Test_file.txt"
+							"src": "/C:/Users/Andrei/Documents/Pseudopartitions/GitHub/FileStorage/Test_file.txt"
 						},
 						{
 							"key": "filename",
@@ -80,7 +80,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/C:/Users/Andrei/Documents/Pseudopartitions/GitHub/FileStorage/FileStorage/Test_file_modified.txt"
+							"src": "/C:/Users/Andrei/Documents/Pseudopartitions/GitHub/FileStorage/Test_file_modified.txt"
 						},
 						{
 							"key": "filename",
@@ -139,7 +139,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/storage/match-filename?regexp=abc",
+					"raw": "localhost:8080/storage/match-filename?regexp=Test.*",
 					"host": [
 						"localhost"
 					],
@@ -151,7 +151,7 @@
 					"query": [
 						{
 							"key": "regexp",
-							"value": "abc"
+							"value": "Test.*"
 						}
 					]
 				}
