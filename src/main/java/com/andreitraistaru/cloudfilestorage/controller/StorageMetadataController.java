@@ -1,10 +1,9 @@
-package com.andreitraistaru.filestorage.controller;
+package com.andreitraistaru.cloudfilestorage.controller;
 
-import com.andreitraistaru.filestorage.dto.FilesMatchingRegexpDTO;
-import com.andreitraistaru.filestorage.dto.NumberOfFilesDTO;
-import com.andreitraistaru.filestorage.exception.InvalidRegexpException;
-import com.andreitraistaru.filestorage.exception.StorageServiceException;
-import com.andreitraistaru.filestorage.service.StorageService;
+import com.andreitraistaru.cloudfilestorage.dto.FilesMatchingRegexpDTO;
+import com.andreitraistaru.cloudfilestorage.dto.NumberOfFilesDTO;
+import com.andreitraistaru.cloudfilestorage.exception.InvalidRegexpException;
+import com.andreitraistaru.cloudfilestorage.exception.StorageServiceException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

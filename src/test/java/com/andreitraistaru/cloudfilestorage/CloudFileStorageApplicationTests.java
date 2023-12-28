@@ -1,10 +1,10 @@
-package com.andreitraistaru.filestorage;
+package com.andreitraistaru.cloudfilestorage;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class FileStorageApplicationTests {
+class CloudFileStorageApplicationTests {
     @Test
     void contextLoads() {
     }

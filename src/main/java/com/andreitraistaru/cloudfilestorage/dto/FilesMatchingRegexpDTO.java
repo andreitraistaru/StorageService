@@ -1,4 +1,4 @@
-package com.andreitraistaru.filestorage.dto;
+package com.andreitraistaru.cloudfilestorage.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

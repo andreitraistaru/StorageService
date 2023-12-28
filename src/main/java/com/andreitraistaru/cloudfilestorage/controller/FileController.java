@@ -1,10 +1,9 @@
-package com.andreitraistaru.filestorage.controller;
+package com.andreitraistaru.cloudfilestorage.controller;
 
-import com.andreitraistaru.filestorage.exception.AlreadyExistingStorageItemException;
-import com.andreitraistaru.filestorage.exception.InvalidStorageItemNameException;
-import com.andreitraistaru.filestorage.exception.MissingStorageItemException;
-import com.andreitraistaru.filestorage.exception.StorageServiceException;
-import com.andreitraistaru.filestorage.service.StorageService;
+import com.andreitraistaru.cloudfilestorage.exception.InvalidStorageItemNameException;
+import com.andreitraistaru.cloudfilestorage.exception.MissingStorageItemException;
+import com.andreitraistaru.cloudfilestorage.exception.StorageServiceException;
+import com.andreitraistaru.cloudfilestorage.service.S3ClientService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.Resource;
@@ -15,26 +14,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @RestController
 @RequestMapping("/file")
 @Log4j2
 @AllArgsConstructor
 public class FileController {
-    private final StorageService storageService;
+    private final S3ClientService s3ClientService;
 
     @PostMapping("/create")
     public ResponseEntity<String> createFile(@RequestParam("filename") String filename,
                                              @RequestParam("file") MultipartFile newFile) {
         try {
-            storageService.createStorageItem(filename, newFile);
-        } catch(AlreadyExistingStorageItemException ignored) {
-            return new ResponseEntity<>("File " + filename + " already existing. Storage system " +
-                    "has not been modified. Try again using /update endpoint.", HttpStatus.CONFLICT);
-        } catch(InvalidStorageItemNameException ignored) {
-            return new ResponseEntity<>(filename + " is an invalid file name. File name should contain" +
-                    " 1-64 characters from [a-z][A-Z][0-9]_-", HttpStatus.BAD_REQUEST);
-        } catch (StorageServiceException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            s3ClientService.uploadFile(filename, newFile.getInputStream());
+        } catch(IOException ignored) {
+            return new ResponseEntity<>("Invalid file provided", HttpStatus.BAD_REQUEST);
         }
 
         return new ResponseEntity<>("File " + filename + " created successfully.", HttpStatus.CREATED);

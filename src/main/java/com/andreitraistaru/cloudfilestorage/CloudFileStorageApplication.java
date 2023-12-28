@@ -1,13 +1,11 @@
-package com.andreitraistaru.filestorage;
+package com.andreitraistaru.cloudfilestorage;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FileStorageApplication {
-
+public class CloudFileStorageApplication {
     public static void main(String[] args) {
-        SpringApplication.run(FileStorageApplication.class, args);
+        SpringApplication.run(CloudFileStorageApplication.class, args);
     }
-
 }
