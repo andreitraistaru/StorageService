@@ -37,7 +37,7 @@ public class FileController {
             return new ResponseEntity<>("Invalid file provided", HttpStatus.BAD_REQUEST);
         }
 
-        return new ResponseEntity<>("File " + filename + " created successfully. VersionId: " + versionId, HttpStatus.CREATED);
+        return new ResponseEntity<>(versionId, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/delete")
@@ -52,7 +52,7 @@ public class FileController {
 
         s3ClientService.deleteFile(filename);
 
-        return new ResponseEntity<>("File " + filename + " deleted successfully.", HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/update")
@@ -74,7 +74,7 @@ public class FileController {
             return new ResponseEntity<>("Invalid file provided", HttpStatus.BAD_REQUEST);
         }
 
-        return new ResponseEntity<>("File " + filename + " updated successfully. VersionId: " + versionId, HttpStatus.OK);
+        return new ResponseEntity<>(versionId, HttpStatus.OK);
     }
 
     @GetMapping("/read")
