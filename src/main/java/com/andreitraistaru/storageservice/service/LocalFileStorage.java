@@ -1,19 +1,23 @@
 package com.andreitraistaru.storageservice.service;
 
+import com.andreitraistaru.storageservice.dto.FilesMatchingRegexpDTO;
+import com.andreitraistaru.storageservice.dto.NumberOfFilesDTO;
 import com.andreitraistaru.storageservice.exception.AlreadyExistingStorageItemException;
 import com.andreitraistaru.storageservice.exception.MissingStorageItemException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.List;
 
 @Service
@@ -22,66 +26,156 @@ public class LocalFileStorage implements FileStorageInterface {
     private String versioningServiceUrl;
     @Value("${path.calculator.service.url}")
     private String pathCalculatorServiceUrl;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    private String computePathBasedOnFilename(String filename) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(pathCalculatorServiceUrl + "/get-filename")
+                .queryParam("filename", filename);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, null, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+
+            return null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
 
     public String createFile(String fileName, MultipartFile multipartFile) throws AlreadyExistingStorageItemException {
-        UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromUriString("localhost:8081/file/create")
-                .queryParam("fileName", fileName);
+        String url = versioningServiceUrl + "/file/create";
 
-        RestTemplate restTemplate = new RestTemplate();
         LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         HttpHeaders httpHeaders = new HttpHeaders();
 
+        parts.add("filename", computePathBasedOnFilename(fileName));
         parts.add("file", multipartFile.getResource());
         httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
         HttpEntity<LinkedMultiValueMap<String, Object>> httpEntity = new HttpEntity<>(parts, httpHeaders);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(urlBuilder.build().toString(), httpEntity, String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
 
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return response.getBody();
-        } else {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            } else {
+                throw new AlreadyExistingStorageItemException();
+            }
+        } catch (Throwable ignored) {
             throw new AlreadyExistingStorageItemException();
         }
     }
 
     public String updateFile(String fileName, MultipartFile multipartFile) throws MissingStorageItemException {
-//        File file = convertMultiPartToFile(multipartFile, fileName);
-//
-//        PutObjectResult result = s3client.putObject(new PutObjectRequest(s3BucketName, fileName, file));
-//
-//        file.delete();
-//
-//        return result.getVersionId();
-        return "";
+        String url = versioningServiceUrl + "/file/update";
+
+        LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+        parts.add("filename", computePathBasedOnFilename(fileName));
+        parts.add("file", multipartFile.getResource());
+        httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<LinkedMultiValueMap<String, Object>> httpEntity = new HttpEntity<>(parts, httpHeaders);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            } else {
+                throw new MissingStorageItemException();
+            }
+        } catch (Throwable ignored) {
+            throw new MissingStorageItemException();
+        }
     }
 
-    public Resource downloadFile(String fileName, String versionId) throws MissingStorageItemException {
-//        S3Object s3Object;
-//
-//        if (versionId != null) {
-//            s3Object = s3client.getObject(new GetObjectRequest(s3BucketName, fileName, versionId));
-//        } else {
-//            s3Object = s3client.getObject(new GetObjectRequest(s3BucketName, fileName));
-//        }
-//
-//        return convertS3ObjectToResource(s3Object);
-        return null;
+    public Resource downloadFile(String fileName, String version) throws MissingStorageItemException {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(versioningServiceUrl + "/file/read")
+                .queryParam("filename", computePathBasedOnFilename(fileName))
+                .queryParam("version", version);
+
+        try {
+            File file = restTemplate.execute(uriBuilder.toUriString(), HttpMethod.GET, null, clientHttpResponse -> {
+                if (!clientHttpResponse.getStatusCode().is2xxSuccessful()) {
+                    return null;
+                }
+
+                File tmpFile = File.createTempFile("file_", ".tmp");
+
+                StreamUtils.copy(clientHttpResponse.getBody(), new FileOutputStream(tmpFile));
+
+                return tmpFile;
+            });
+
+            if (file == null) {
+                throw new MissingStorageItemException();
+            }
+
+            return new InputStreamResource(new FileInputStream(file));
+        } catch (Throwable ignored) {
+            throw new MissingStorageItemException();
+        }
     }
 
     public void deleteFile(String fileName) throws MissingStorageItemException {
-//        s3client.deleteObject(new DeleteObjectRequest(s3BucketName, fileName));
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(versioningServiceUrl + "/file/delete")
+                .queryParam("filename", computePathBasedOnFilename(fileName));
+
+        LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+        HttpEntity<LinkedMultiValueMap<String, Object>> httpEntity = new HttpEntity<>(parts, httpHeaders);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.DELETE, httpEntity, String.class);
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new MissingStorageItemException();
+            }
+        } catch (Throwable ignored) {
+            throw new MissingStorageItemException();
+        }
     }
 
     public long getNumberOfFiles() {
-//        return s3client.listObjects(s3BucketName)
-//                .getObjectSummaries()
-//                .stream()
-//                .map(S3ObjectSummary::getKey)
-//                .toList();
-        return 1;
+        String url = versioningServiceUrl + "/storage/number-of-files";
+
+        LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+        HttpEntity<LinkedMultiValueMap<String, Object>> httpEntity = new HttpEntity<>(parts, httpHeaders);
+
+        try {
+            ResponseEntity<NumberOfFilesDTO> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, NumberOfFilesDTO.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody().getNumberOfFiles();
+            }
+
+            return -1;
+        } catch (Throwable ignored) {
+            return -1;
+        }
     }
+
     public List<String> getFilesMatchingRegexp(String regexp) {
-//        return s3client.doesObjectExist(s3BucketName, fileName);
-        return null;
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(versioningServiceUrl + "/storage/match-filename")
+                .queryParam("regexp", regexp);
+
+        try {
+            ResponseEntity<FilesMatchingRegexpDTO> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, null, FilesMatchingRegexpDTO.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody().getFilenames();
+            }
+
+            return null;
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 }
