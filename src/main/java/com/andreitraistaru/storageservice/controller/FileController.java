@@ -37,6 +37,11 @@ public class FileController {
     public ResponseEntity<String> createFile(@RequestParam("filename") String filename,
                                              @RequestParam("file") MultipartFile newFile,
                                              @RequestParam("storageType") StorageType storageType) {
+        System.out.println("filename" + filename);
+        System.out.println("file (name)" + newFile.getName());
+        System.out.println("file (original name)" + newFile.getOriginalFilename());
+        System.out.println("storageType" + storageType);
+
         if (!storageServices.containsKey(storageType)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -51,6 +56,9 @@ public class FileController {
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteFile(@RequestParam("filename") String filename,
                                              @RequestParam("storageType") StorageType storageType) {
+        System.out.println("filename" + filename);
+        System.out.println("storageType" + storageType);
+
         try {
             if (!storageServices.containsKey(storageType)) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -68,6 +76,11 @@ public class FileController {
     public ResponseEntity<String> updateFile(@RequestParam("filename") String filename,
                                              @RequestParam("file") MultipartFile updatedFile,
                                              @RequestParam("storageType") StorageType storageType) {
+        System.out.println("filename" + filename);
+        System.out.println("file (name)" + updatedFile.getName());
+        System.out.println("file (original name)" + updatedFile.getOriginalFilename());
+        System.out.println("storageType" + storageType);
+
         if (!storageServices.containsKey(storageType)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -83,6 +96,10 @@ public class FileController {
     public ResponseEntity<?> readFile(@RequestParam("filename") String filename,
                                       @RequestParam(value = "version", required = false) String version,
                                       @RequestParam("storageType") StorageType storageType) {
+        System.out.println("filename" + filename);
+        System.out.println("version" + version);
+        System.out.println("storageType" + storageType);
+
         if (!storageServices.containsKey(storageType)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }

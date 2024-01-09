@@ -29,6 +29,7 @@ public class LocalFileStorage implements FileStorageInterface {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private String computePathBasedOnFilename(String filename) {
+        System.out.println("computePathBasedOnFilename: filename = " + filename);
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(pathCalculatorServiceUrl + "/get-filename")
                 .queryParam("filename", filename);
 
@@ -36,9 +37,12 @@ public class LocalFileStorage implements FileStorageInterface {
             ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, null, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                return response.getBody();
+                String responseString = response.getBody();
+                System.out.println("computePathBasedOnFilename: responseString = " + responseString);
+                return responseString;
             }
 
+            System.out.println("computePathBasedOnFilename: responseString = null");
             return null;
         } catch (Throwable ignored) {
             return null;
@@ -46,6 +50,7 @@ public class LocalFileStorage implements FileStorageInterface {
     }
 
     public String createFile(String fileName, MultipartFile multipartFile) throws AlreadyExistingStorageItemException {
+        System.out.println("createFile: fileName = " + fileName);
         String url = versioningServiceUrl + "/file/create";
 
         LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
@@ -59,6 +64,9 @@ public class LocalFileStorage implements FileStorageInterface {
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
 
+            System.out.println("response body: " + response.getBody());
+            System.out.println("response code: " + response.getStatusCode());
+
             if (response.getStatusCode().is2xxSuccessful()) {
                 return response.getBody();
             } else {
@@ -70,6 +78,7 @@ public class LocalFileStorage implements FileStorageInterface {
     }
 
     public String updateFile(String fileName, MultipartFile multipartFile) throws MissingStorageItemException {
+        System.out.println("updateFile: fileName = " + fileName);
         String url = versioningServiceUrl + "/file/update";
 
         LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
@@ -83,6 +92,9 @@ public class LocalFileStorage implements FileStorageInterface {
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
 
+            System.out.println("response body: " + response.getBody());
+            System.out.println("response code: " + response.getStatusCode());
+
             if (response.getStatusCode().is2xxSuccessful()) {
                 return response.getBody();
             } else {
@@ -94,12 +106,17 @@ public class LocalFileStorage implements FileStorageInterface {
     }
 
     public Resource downloadFile(String fileName, String version) throws MissingStorageItemException {
+        System.out.println("downloadFile: fileName = " + fileName);
+
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(versioningServiceUrl + "/file/read")
                 .queryParam("filename", computePathBasedOnFilename(fileName))
                 .queryParam("version", version);
 
         try {
             File file = restTemplate.execute(uriBuilder.toUriString(), HttpMethod.GET, null, clientHttpResponse -> {
+                System.out.println("response body: " + clientHttpResponse.getBody());
+                System.out.println("response code: " + clientHttpResponse.getStatusCode());
+
                 if (!clientHttpResponse.getStatusCode().is2xxSuccessful()) {
                     return null;
                 }
@@ -112,8 +129,11 @@ public class LocalFileStorage implements FileStorageInterface {
             });
 
             if (file == null) {
+                System.out.println("response file: null");
                 throw new MissingStorageItemException();
             }
+
+            System.out.println("response file: " + file.getName());
 
             return new InputStreamResource(new FileInputStream(file));
         } catch (Throwable ignored) {
@@ -122,6 +142,8 @@ public class LocalFileStorage implements FileStorageInterface {
     }
 
     public void deleteFile(String fileName) throws MissingStorageItemException {
+        System.out.println("deleteFile: fileName = " + fileName);
+
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(versioningServiceUrl + "/file/delete")
                 .queryParam("filename", computePathBasedOnFilename(fileName));
 
@@ -132,6 +154,9 @@ public class LocalFileStorage implements FileStorageInterface {
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.DELETE, httpEntity, String.class);
+
+            System.out.println("response body: " + response.getBody());
+            System.out.println("response code: " + response.getStatusCode());
 
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new MissingStorageItemException();
